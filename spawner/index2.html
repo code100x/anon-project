@@ -1,0 +1,116 @@
+import { Browser, Builder, By, until, WebDriver } from "selenium-webdriver";
+import { Driver, Options as chrome } from "selenium-webdriver/chrome";
+
+async function OpenMeet(driver : WebDriver) {
+    try{
+        await driver.get("https://youtu.be/gGHaXVO-9j4");
+        const popbutton = await driver.wait(until.elementLocated(By.xpath('//span[contains(text(), "Got it")]')),10000);
+        await popbutton.click();
+        const nameInput = await driver.wait(until.elementLocated(By.xpath('//input[@placeholder="Your name"]')),10000);
+        await nameInput.clear();
+        await nameInput.click();
+        await nameInput.sendKeys('Shivam',' 2 bot')
+        await driver.sleep(1000)
+        ​const buttonInput = await driver.wait(until.elementLocated(By.xpath('//span[contains(text(), "Ask to join")]')), 10000);
+    buttonInput.click();
+        // const buttonInput = await driver.wait(until.elementsLocated(By.id('123123c')),100000)
+    }
+    finally{
+        // await driver.quit();
+    }
+}
+
+main();
+
+async function getDriver() {
+    const options = new chrome({})
+    options.addArguments("--disable-blink-features=AutomationControlled")
+    options.addArguments("--use-fake-ui-for-media-stream")
+    let driver = await new Builder().forBrowser(Browser.CHROME).setChromeOptions(options).build();
+    return driver;
+}
+
+async function startScreenshare(driver: WebDriver) {
+    console.log("startScreenshare called")
+    const response = await driver.executeScript(`
+        function wait(delayInMS) {
+            return new Promise((resolve) => setTimeout(resolve, delayInMS));
+        }
+        
+        function startRecording(stream, lengthInMS) {
+            let recorder = new MediaRecorder(stream);
+            let data = [];
+            
+            recorder.ondataavailable = (event) => data.push(event.data);
+            recorder.start();
+            
+            let stopped = new Promise((resolve, reject) => {
+                recorder.onstop = resolve;
+                recorder.onerror = (event) => reject(event.name);
+            });
+            
+            let recorded = wait(lengthInMS).then(() => {
+                if (recorder.state === "recording") {
+                    recorder.stop();
+                }
+            });
+            
+            return Promise.all([stopped, recorded]).then(() => data);
+        }
+      
+        console.log("before mediadevices")
+        
+        // Request both screen and audio permissions
+        const screenStream = await window.navigator.mediaDevices.getDisplayMedia({
+            video: {
+                displaySurface: "browser"
+            },
+            audio: false,
+            preferCurrentTab: true
+        });
+        
+        const audioStream = await window.navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: false
+        });
+        
+        // Combine screen and audio streams
+        const combinedStream = new MediaStream([
+            ...screenStream.getVideoTracks(),
+            ...audioStream.getAudioTracks()
+        ]);
+        
+        console.log("before start recording")
+        const recordedChunks = await startRecording(combinedStream, 20000);
+        console.log("after start recording")
+        
+        let recordedBlob = new Blob(recordedChunks, { type: "video/webm" });
+        
+        // Create download for video with audio
+        const recording = document.createElement("video");
+        recording.src = URL.createObjectURL(recordedBlob);
+        
+        const downloadButton = document.createElement("a");
+        downloadButton.href = recording.src;
+        downloadButton.download = "RecordedScreenWithAudio.webm";    
+        downloadButton.click();
+        
+        console.log("after download button click")
+        
+        // Clean up streams
+        screenStream.getTracks().forEach(track => track.stop());
+        audioStream.getTracks().forEach(track => track.stop());
+    `)
+    
+    console.log(response)
+    driver.sleep(1000000)
+}
+
+async function main() {
+    const driver = await getDriver();
+    OpenMeet(driver);
+    startScreenshare(driver)
+}
+
+
+main();
