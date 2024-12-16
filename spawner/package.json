@@ -11,6 +11,7 @@
   "description": "",
   "dependencies": {
     "@types/selenium-webdriver": "^4.1.27",
+    "puppeteer-screen-recorder": "^3.0.6",
     "selenium-webdriver": "^4.27.0",
     "typescript": "^5.7.2"
   }
