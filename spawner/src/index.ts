@@ -37,11 +37,10 @@ async function getDriver() {
 async function startScreenshare(driver: WebDriver) {
     console.log("startScreensharecalled")
     const response = await driver.executeScript(`
-
         function wait(delayInMS) {
             return new Promise((resolve) => setTimeout(resolve, delayInMS));
         }
-
+        
         function startRecording(stream, lengthInMS) {
             let recorder = new MediaRecorder(stream);
             let data = [];
@@ -56,7 +55,7 @@ async function startScreenshare(driver: WebDriver) {
             
             let recorded = wait(lengthInMS).then(() => {
                 if (recorder.state === "recording") {
-                recorder.stop();
+                    recorder.stop();
                 }
             });
             
@@ -64,27 +63,47 @@ async function startScreenshare(driver: WebDriver) {
         }
       
         console.log("before mediadevices")
-        window.navigator.mediaDevices.getDisplayMedia({
-            video: {
-              displaySurface: "browser"
-            },
-            audio: true,
-            preferCurrentTab: true
-        }).then(async stream => {
-            // stream should be streamed via WebRTC to a server
-            console.log("before start recording")
-            const recordedChunks = await startRecording(stream, 20000);
-            console.log("after start recording")
-            let recordedBlob = new Blob(recordedChunks, { type: "video/webm" });
-            const recording = document.createElement("video");
-            recording.src = URL.createObjectURL(recordedBlob);
-            const downloadButton = document.createElement("a");
-            downloadButton.href = recording.src;
-            downloadButton.download = "RecordedVideo.webm";    
-            downloadButton.click();
-            console.log("after download button click")
-        })
         
+        // Request both screen and audio permissions
+        const screenStream = await window.navigator.mediaDevices.getDisplayMedia({
+            video: {
+                displaySurface: "browser"
+            },
+            audio: false,
+            preferCurrentTab: true
+        });
+        
+        const audioStream = await window.navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: false
+        });
+        
+        // Combine screen and audio streams
+        const combinedStream = new MediaStream([
+            ...screenStream.getVideoTracks(),
+            ...audioStream.getAudioTracks()
+        ]);
+        
+        console.log("before start recording")
+        const recordedChunks = await startRecording(combinedStream, 20000);
+        console.log("after start recording")
+        
+        let recordedBlob = new Blob(recordedChunks, { type: "video/webm" });
+        
+        // Create download for video with audio
+        const recording = document.createElement("video");
+        recording.src = URL.createObjectURL(recordedBlob);
+        
+        const downloadButton = document.createElement("a");
+        downloadButton.href = recording.src;
+        downloadButton.download = "RecordedScreenWithAudio.webm";    
+        downloadButton.click();
+        
+        console.log("after download button click")
+        
+        // Clean up streams
+        screenStream.getTracks().forEach(track => track.stop());
+        audioStream.getTracks().forEach(track => track.stop());
     `)
 
     console.log(response)
