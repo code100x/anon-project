@@ -1,0 +1,17 @@
+{
+  "name": "youtube-lives",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsc -b && node dist/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@types/selenium-webdriver": "^4.1.27",
+    "selenium-webdriver": "^4.27.0",
+    "typescript": "^5.7.2"
+  }
+}
