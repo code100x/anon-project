@@ -7,16 +7,17 @@ async function openMeet(driver: WebDriver) {
 
     const nameInput = await driver.wait(
       until.elementLocated(By.xpath('//input[@placeholder="Your name"]')),
-      10000
+      15000
     );
-    await nameInput.sendKeys("value", "Meeting bot");
-    await driver.sleep(1000);
+    await driver.sleep(2000);
+    await nameInput.sendKeys("Meeting bot");
     const buttonInput = await driver.wait(
       until.elementLocated(By.xpath('//span[contains(text(), "Ask to join")]')),
-      10000
+      15000
     );
-    buttonInput.click();
-  } finally {
+    await buttonInput.click();
+  } catch (e) {
+    console.log(e);
   }
 }
 
@@ -24,8 +25,7 @@ async function getDriver() {
   const options = new Options({});
   options.addArguments("--disable-blink-features=AutomationControlled");
   options.addArguments("--use-fake-ui-for-media-stream");
-  options.addArguments("--window-size=1080,720");
-  options.addArguments("--auto-select-desktop-capture-source=[RECORD]");
+  options.addArguments("--window-size=1920,1200");
   options.addArguments("--auto-select-desktop-capture-source=[RECORD]");
   options.addArguments("--enable-usermedia-screen-capturing");
   options.addArguments('--auto-select-tab-capture-source-by-title="Meet"');
@@ -42,13 +42,14 @@ async function getDriver() {
 
 async function startScreenshare(driver: WebDriver) {
   console.log("startScreensharecalled");
-  await driver.executeScript(`
-    console.log("script execution starting")
+  await driver.sleep(2000);
+  try {
+    const script = `
     const videoProfile = "profile-level-id=6400";
 const ipAddress = "127.0.0.1";
 const useSingleWebRTCPort = true;
 function setCodec(sdp, type, codec, clockRate) {
-  var sdpLines = sdp.split("\r\n");
+  var sdpLines = sdp.split("\\r\\n");
 
   for (var i = 0; i < sdpLines.length; i++) {
     if (sdpLines[i].search("m=" + type) !== -1) {
@@ -110,7 +111,7 @@ function setCodec(sdp, type, codec, clockRate) {
     }
   }
 
-  sdp = resSDPLines.join("\r\n");
+  sdp = resSDPLines.join("\\r\\n");
   return sdp;
 }
 function CodecProfileMatches(codec, sdpLines, mLineIndex, codecPayload) {
@@ -149,7 +150,7 @@ function setMediaBitrates(sdp) {
 function setMediaBitrate(sdp, media, bitrate) {
   var modifier = "b=AS:";
 
-  var lines = sdp.split("\r\n");
+  var lines = sdp.split("\\r\\n");
   var line = -1;
   for (var i = 0; i < lines.length; i++) {
     if (lines[i].indexOf("m=" + media) === 0) {
@@ -170,14 +171,14 @@ function setMediaBitrate(sdp, media, bitrate) {
   // If we are on a b line, replace it
   if (lines[line].indexOf("b") === 0) {
     lines[line] = modifier + bitrate;
-    return lines.join("\r\n");
+    return lines.join("\\r\\n");
   }
 
   // Add a new b line
   var newLines = lines.slice(0, line);
   newLines.push(modifier + bitrate);
   newLines = newLines.concat(lines.slice(line, lines.length));
-  return newLines.join("\r\n");
+  return newLines.join("\\r\\n");
 }
 const modifyOffer = (offer) => {
   offer.sdp = setMediaBitrates(offer.sdp);
@@ -188,7 +189,7 @@ const modifyOffer = (offer) => {
   offer.sdp = offer.sdp.replace("a=sendrecv", "a=sendonly");
 
   //Fix for a=extmap-allow-mixed - Unreal Media Server doesn't support it in SDP
-  offer.sdp = offer.sdp.replace("a=extmap-allow-mixed\r\n", "");
+  offer.sdp = offer.sdp.replace("a=extmap-allow-mixed\\r\\n", "");
   offer.sdp = offer.sdp.replace("a=extmap-allow-mixed", "");
   return offer;
 };
@@ -332,21 +333,25 @@ window.navigator.mediaDevices
     });
     // Create and send an SDP offer
     let offer = await peerConnection.createOffer();
-    offer = modifyOffer(offer);
+    offer =await modifyOffer(offer);
     await peerConnection.setLocalDescription(offer);
-    console.log("12345|-|-|" + JSON.stringify(peerConnection.localDescription));
     socket.send("12345|-|-|" + JSON.stringify(peerConnection.localDescription));
   });
-  console.log("Screen sharing setup complete.");
-    `);
+console.log("Screen sharing setup complete.");
+await wait(10000);
+`;
+
+    await driver.executeScript(script);
+  } catch (error) {
+    console.log(error);
+  }
+
   driver.sleep(1000000);
 }
 
 async function main() {
   const driver = await getDriver();
   await openMeet(driver);
-  await new Promise((x) => setTimeout(x, 1000));
-  // wait until admin lets u join
   await startScreenshare(driver);
 }
 main();
