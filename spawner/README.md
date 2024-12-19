@@ -66,6 +66,9 @@ ffmpeg -i udp://127.0.0.1:2000 -c:v libx264 Desktop\ffmpeg\outputfinal.mp4
 1. Check the output file at the specified location.
 2. Ensure the video plays correctly.
 
+## Stay Updated
+Follow us on [X](https://x.com/Prithviraj81646) (Twitter) for the latest updates, features, and announcements about this project:
+
 ## License
 This project is licensed under the MIT License.
 
