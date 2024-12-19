@@ -1,6 +1,6 @@
 # Google Meet Recording Bot
 
-A bot for automating tasks in Google Meet, including joining a meeting, participating in discussions, and recording WebRTC streams. This project also provides steps to convert WebRTC streams into MPEG2 streams using Unreal Media Server and save them locally using FFmpeg.
+A bot for automating tasks in Google Meet, including joining a meeting and recording WebRTC streams. This project also provides steps to convert WebRTC streams into MPEG2 streams using Unreal Media Server and save them locally using FFmpeg.
 
 ## Features
 
